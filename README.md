@@ -1,39 +1,77 @@
 ﻿# DMS Diagramas
 
-Editor interactivo de diagramas con Svelte 5 y `@xyflow/svelte` (Svelte Flow).
+Editor de **secuencia** y **entidad-relación** con Svelte 5 y Svelte Flow. Selector de tipo, lienzo a todo el ancho, propiedades flotantes y minimapa opcional.
 
-## Iniciar
+## Iniciar en local
 
 ```powershell
 npm.cmd install
 npm.cmd run dev
 ```
 
-Abre la URL que imprime Vite. En Windows se usa `npm.cmd` si PowerShell bloquea `npm.ps1`.
+Usa la dirección local que imprime Vite (`localhost` o `127.0.0.1`). `npm.cmd` evita el bloqueo de `npm.ps1` en PowerShell.
 
-## Uso
+- Añade entidades, participantes o notas desde la barra. Selecciona elementos para editar sus propiedades.
+- Arrastra entre puertos o pulsa **Conectar** para crear relaciones y mensajes.
+- **Ordenar diagrama** alinea participantes y asigna una fila a cada mensaje. En ER utiliza ELK en un Web Worker para distribuir las tablas y calcular rutas ortogonales con puertos separados. Reduce cruces y evita atravesar entidades; un grafo arbitrario puede necesitar cruces.
+- Las nuevas conexiones y los cambios estructurales se ordenan automáticamente. En secuencia, las propiedades permiten subir o bajar mensajes y marcar retornos. Hasta 200 mensajes.
+- En ER puedes editar atributos, tipos, claves PK/FK/PK-FK y nulabilidad. Las cardinalidades se muestran como texto.
+- Ctrl/⌘+Z deshace; Ctrl/⌘+Shift+Z rehace; Ctrl/⌘+D duplica; Supr elimina; Shift permite selección múltiple. Rueda para zoom y fondo para desplazar.
+- Cada tipo conserva un borrador en el navegador. Importar/exportar JSON permite llevar copias. Límite de importación: 5 MB, 1500 nodos y 5000 conexiones.
 
-- **Flujo:** añade procesos, decisiones, inicio/fin y notas. Arrastra los elementos y conecta sus puertos, o utiliza los selectores Desde/Hacia.
-- **Entidad-relación:** crea entidades, edita atributos, tipos, claves PK/FK/PK-FK y nulabilidad; etiqueta las relaciones con cardinalidades. La notación de cardinalidad es textual.
-- **Secuencia:** crea participantes con líneas de vida. Los 12 pasos numerados permiten mensajes horizontales y retornos discontinuos. Los participantes se alinean al terminar de arrastrarlos.
-- Selecciona un elemento o conexión para editarlo en Propiedades. Puedes duplicar y eliminar elementos. Al borrar un elemento se eliminan también sus conexiones.
-- Cada tipo conserva su propio diagrama en `localStorage`. El guardado corresponde al navegador y al origen actuales; exporta JSON para conservar copias o trasladar el trabajo.
-- Importar JSON valida el formato y mantiene el diagrama actual si el archivo es inválido. Límite: 5 MB, 1500 nodos y 5000 conexiones.
-- Usa los controles de zoom, Ajustar vista y el minimapa para navegar. Shift + arrastrar selecciona varios elementos.
+## Guardar en el repositorio
 
-Atajos: Ctrl/⌘+Z deshace, Ctrl/⌘+Shift+Z rehace, Ctrl/⌘+D duplica, Ctrl/⌘+S guarda y Supr elimina la selección. El historial conserva hasta 80 estados por sesión del diagrama; al importar o cambiar de modo se reinicia.
+En la versión local (`npm.cmd run dev`), pulsa **Guardar en repositorio**. Esto escribe:
 
-## Esquema SQL existente
+```text
+public/diagrams/<identificador>.json
+public/diagrams/index.json
+```
 
-En Entidad-relación, **Cargar esquema SQL** abre `public/schema/erd.json` con el formato original del proyecto. La confirmación reemplaza el diagrama ER actual: exporta una copia si deseas conservarlo.
+**Diagramas** abre la biblioteca tanto en local como en Pages. Abrir un archivo existente y guardarlo de nuevo actualiza el mismo JSON; un nuevo diagrama crea otro archivo. El guardado en archivos es explícito: el autoguardado normal solo conserva el borrador en el navegador.
 
-Para regenerar el archivo, configura las variables `DB_SERVER`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD` y, opcionalmente, `DB_PORT` y `DB_TRUST_SERVER_CERT` en `.env.erd`, y ejecuta:
+Incluye los JSON y su índice en el mismo commit y súbelos a `main`. El siguiente despliegue incorporará esos diagramas. No se hacen commits ni pushes automáticos.
+
+En GitHub Pages, la biblioteca carga los JSON estáticos publicados. El botón de escribir en el repositorio solo existe en desarrollo local. Puedes explorar y editar una copia en el navegador y exportarla, pero publicar cambios requiere guardarlos en local y subirlos a Git.
+
+Enlaces directos:
+
+```text
+https://yeye2e.github.io/dms-diagramas/?diagram=modelo-pedidos
+https://yeye2e.github.io/dms-diagramas/?diagram=consulta-datos
+```
+
+El repositorio incluye esos dos ejemplos. Los diagramas nuevos reciben identificadores propios.
+
+## GitHub Pages
+
+El workflow `.github/workflows/pages.yml` ejecuta pruebas, compila Vite y publica `dist` cuando se suben cambios a `main`, o al ejecutarlo manualmente. Utiliza el `base_path` proporcionado por GitHub Pages para las rutas de scripts, biblioteca y Web Worker.
+
+1. Sube los cambios del proyecto y `public/diagrams/` a GitHub.
+2. En **Settings → Pages → Build and deployment → Source**, selecciona **GitHub Actions**.
+3. Ejecuta el workflow **Deploy diagrams to GitHub Pages**, o sube un commit a `main`.
+
+El código no cambia la configuración remota ni publica por sí solo durante el trabajo local. La URL estará disponible cuando el workflow termine correctamente.
+
+Para comprobar la compilación con el subdirectorio de Pages:
+
+```powershell
+$env:VITE_BASE_PATH='/dms-diagramas/'
+npm.cmd run build
+Remove-Item Env:VITE_BASE_PATH
+```
+
+## Cargar esquema SQL existente
+
+En **Archivo → Cargar esquema SQL**, el editor local lee `public/schema/erd.json`. Confirma el reemplazo del ER actual y luego utiliza Guardar en repositorio si quieres incluirlo en la biblioteca publicada.
+
+Para regenerarlo, configura `DB_SERVER`, `DB_DATABASE`, `DB_USER`, `DB_PASSWORD` y, opcionalmente, `DB_PORT` y `DB_TRUST_SERVER_CERT` en `.env.erd`:
 
 ```powershell
 node scripts/export-schema.mjs
 ```
 
-La conexión SQL solo se realiza desde ese script de Node. El editor web no recibe las credenciales. `.env.erd` y el esquema generado están excluidos de Git.
+Las credenciales solo se usan desde Node. `.env.erd` y el esquema generado están excluidos de Git; guardar un diagrama en `public/diagrams` sí lo incluye entre los archivos que se publicarán.
 
 ## Verificación
 
@@ -42,8 +80,7 @@ npm.cmd test
 npm.cmd run build
 npx.cmd playwright install chromium
 npm.cmd run test:e2e
+npm.cmd run test:pages
 ```
 
-Las pruebas de navegador cubren edición, deshacer/rehacer, conexiones mediante puertos, persistencia, importación/exportación, atributos ER, secuencia y tamaños de 320, 768, 1024 y 1440 px. `PLAYWRIGHT_CHROMIUM_EXECUTABLE` permite usar un Chromium ya instalado. Las pruebas sirven el compilado de producción en `127.0.0.1:4173`.
-
-Para formatear: `npm.cmd run format`.
+Las pruebas cubren validación de importaciones, historial, rutas ortogonales, guardado local por HTTP, protección de origen, biblioteca estática, edición, conexiones con puertos, persistencia y pantallas de 320, 768, 1024 y 1440 px. `test:pages` también comprueba el subdirectorio de despliegue, los enlaces y el Web Worker. `PLAYWRIGHT_CHROMIUM_EXECUTABLE` permite reutilizar un Chromium instalado.

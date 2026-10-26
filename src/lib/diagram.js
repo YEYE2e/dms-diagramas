@@ -111,6 +111,13 @@ export function validateDiagram(value) {
   if (value.nodes.length > 1500 || value.edges.length > 5000)
     fail("El diagrama supera el límite de 1500 elementos o 5000 conexiones.");
   const mode = value.mode ?? "er";
+  if (
+    value.repositoryId != null &&
+    value.repositoryId !== "" &&
+    (typeof value.repositoryId !== "string" ||
+      !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(value.repositoryId))
+  )
+    fail("Identificador de repositorio inválido.");
   if (!Object.hasOwn(modes, mode)) fail("Tipo de diagrama desconocido.");
   const ids = new Set();
   const nodes = value.nodes.map((n) => {
@@ -258,6 +265,7 @@ export function validateDiagram(value) {
   return {
     version: 1,
     mode,
+    repositoryId: value.repositoryId,
     title:
       typeof value.title === "string"
         ? value.title

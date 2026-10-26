@@ -1,0 +1,14 @@
+[
+  {
+    "id": "modelo-pedidos",
+    "title": "Modelo de pedidos",
+    "mode": "er",
+    "file": "modelo-pedidos.json"
+  },
+  {
+    "id": "consulta-datos",
+    "title": "Consulta de datos",
+    "mode": "sequence",
+    "file": "consulta-datos.json"
+  }
+]

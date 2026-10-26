@@ -546,3 +546,69 @@ footer {
     height: 80px !important;
   }
 }
+.repository-panel {
+  position: absolute;
+  z-index: 15;
+  top: 12px;
+  left: 12px;
+  width: min(320px, calc(100% - 24px));
+  max-height: calc(100% - 24px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px;
+  box-shadow: 0 5px 20px #1d3c4910;
+}
+.repository-panel .panel-title {
+  justify-content: space-between;
+}
+.repository-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 15px;
+}
+.repository-list button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  padding: 12px;
+  white-space: normal;
+  text-align: left;
+}
+.repository-list strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.repository-list span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.top-actions .repository-toggle {
+  font-size: 11px;
+  border: 1px solid var(--border);
+  padding: 7px 10px;
+}
+.actionbar .save-repository {
+  border-color: #b9d6dc;
+  color: #087380;
+  background: #f5fafb;
+}
+.repository-notice {
+  background: #eff8f5;
+  color: #286453;
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 20px;
+  font-size: 11px;
+}
+.repository-notice button {
+  background: none;
+  border: 0;
+  padding: 0 5px;
+  color: inherit;
+}
+.message-order {
+  margin: 0 0 15px;
+}

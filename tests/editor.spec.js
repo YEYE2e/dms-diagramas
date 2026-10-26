@@ -55,8 +55,11 @@ test("minimal ER editor: native connections, undo, routing, persistence and JSON
   await expect(
     page.locator(".svelte-flow__node").filter({ hasText: "Productos" }),
   ).toHaveCount(1);
-  const closeProperties=page.getByRole('button',{name:'Cerrar propiedades',exact:true});
-  if(await closeProperties.isVisible())await closeProperties.click();
+  const closeProperties = page.getByRole("button", {
+    name: "Cerrar propiedades",
+    exact: true,
+  });
+  if (await closeProperties.isVisible()) await closeProperties.click();
   const source = page
     .locator('[data-id="t0"] .svelte-flow__handle.source')
     .first();
@@ -80,15 +83,13 @@ test("minimal ER editor: native connections, undo, routing, persistence and JSON
   await settled(page);
   await expect(page.locator(".svelte-flow__node")).toHaveCount(3);
   await expect(page.locator(".svelte-flow__edge")).toHaveCount(2);
-  await page
-    .locator('input[type="file"]')
-    .setInputFiles({
-      name: "bad.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(
-        '{"nodes":[],"edges":[{"id":"bad","source":"x","target":"y"}]}',
-      ),
-    });
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "bad.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      '{"nodes":[],"edges":[{"id":"bad","source":"x","target":"y"}]}',
+    ),
+  });
   await expect(page.getByRole("alert")).toContainText("No se pudo importar");
   await expect(page.locator(".svelte-flow__node")).toHaveCount(3);
   await page.locator('input[type="file"]').setInputFiles(file);
@@ -160,4 +161,30 @@ test("canvas uses screen space and dialogs work with the keyboard", async ({
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.locator(".svelte-flow__node")).toHaveCount(2);
+});
+test("Pages opens repository diagrams from links and the published library", async ({
+  page,
+}) => {
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("/?diagram=consulta-datos");
+  await expect(page.locator(".svelte-flow__node-participant")).toHaveCount(3);
+  await expect(page.getByLabel("Nombre del diagrama")).toHaveValue(
+    "Consulta de datos",
+  );
+  await expect(
+    page.getByRole("button", { name: "Guardar en repositorio", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Diagramas", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: "Modelo de pedidos Entidad-relación",
+      exact: true,
+    })
+    .click();
+  await expect(page.getByLabel("Nombre del diagrama")).toHaveValue(
+    "Modelo de pedidos",
+  );
+  await expect(page.locator(".svelte-flow__node-entity")).toHaveCount(2);
+  expect(errors).toEqual([]);
 });

@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "mode": "sequence",
+  "title": "Consulta de datos",
+  "nodes": [
+    {
+      "id": "p0",
+      "type": "participant",
+      "position": {
+        "x": 40,
+        "y": 30
+      },
+      "data": {
+        "label": "Usuario",
+        "color": "#087f8c",
+        "steps": 6
+      }
+    },
+    {
+      "id": "p1",
+      "type": "participant",
+      "position": {
+        "x": 300,
+        "y": 30
+      },
+      "data": {
+        "label": "Aplicación",
+        "color": "#087f8c",
+        "steps": 6
+      }
+    },
+    {
+      "id": "p2",
+      "type": "participant",
+      "position": {
+        "x": 560,
+        "y": 30
+      },
+      "data": {
+        "label": "Base de datos",
+        "color": "#087f8c",
+        "steps": 6
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "m0",
+      "source": "p0",
+      "target": "p1",
+      "sourceHandle": "s1",
+      "targetHandle": "t1",
+      "type": "straight",
+      "label": "1. Enviar solicitud",
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b"
+      },
+      "style": ""
+    },
+    {
+      "id": "m1",
+      "source": "p1",
+      "target": "p2",
+      "sourceHandle": "s2",
+      "targetHandle": "t2",
+      "type": "straight",
+      "label": "2. Consultar datos",
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b"
+      },
+      "style": ""
+    },
+    {
+      "id": "m2",
+      "source": "p2",
+      "target": "p1",
+      "sourceHandle": "s3",
+      "targetHandle": "t3",
+      "type": "straight",
+      "label": "3. Devolver resultado",
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b"
+      },
+      "style": "stroke-dasharray: 6 4;"
+    },
+    {
+      "id": "m3",
+      "source": "p1",
+      "target": "p0",
+      "sourceHandle": "s4",
+      "targetHandle": "t4",
+      "type": "straight",
+      "label": "4. Mostrar respuesta",
+      "markerEnd": {
+        "type": "arrowclosed",
+        "color": "#64748b"
+      },
+      "style": "stroke-dasharray: 6 4;"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 1
+  },
+  "repositoryId": "consulta-datos"
+}

@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test src/lib/diagram.test.js src/lib/layout.test.js",
+    "test": "node --test src/lib/diagram.test.js src/lib/layout.test.js scripts/repository-store.test.mjs",
     "test:e2e": "npm run build && playwright test",
+    "test:pages": "node scripts/check-pages.mjs",
     "format": "prettier --plugin prettier-plugin-svelte --write src tests scripts/serve-test.mjs playwright.config.js"
   },
   "devDependencies": {

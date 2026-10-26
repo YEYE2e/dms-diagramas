@@ -7,6 +7,7 @@
     Background,
     BackgroundVariant,
     useSvelteFlow,
+    useUpdateNodeInternals,
   } from "@xyflow/svelte";
   import EntityNode from "../nodes/EntityNode.svelte";
   import ShapeNode from "../nodes/ShapeNode.svelte";
@@ -15,6 +16,7 @@
   import { arrangeDiagram } from "./layout.js";
   import Inspector from "./Inspector.svelte";
   import ConfirmDialog from "./ConfirmDialog.svelte";
+  import RepositoryPanel from "./RepositoryPanel.svelte";
   import {
     modes,
     palette,
@@ -30,6 +32,7 @@
     participant: ParticipantNode,
   };
   const flow = useSvelteFlow();
+  const updateInternals = useUpdateNodeInternals();
   const edgeTypes = { routed: RoutedEdge };
   let mode = $state("er"),
     title = $state("Entidad-relación");
@@ -44,6 +47,11 @@
     revision = $state(0),
     confirmAction = $state("");
   let fileInput, timer;
+  let repositoryId = $state(""),
+    showRepository = $state(false),
+    savingRepository = $state(false),
+    repositoryNotice = $state(""),
+    repositoryRevision = $state(0);
   let showConnect = $state(false),
     showMiniMap = $state(false),
     ordering = $state(false);
@@ -62,6 +70,7 @@
   function documentValue() {
     return {
       version: 1,
+      repositoryId: repositoryId || undefined,
       mode,
       title,
       nodes: nodes.map(({ id, type, position, data }) => ({
@@ -101,6 +110,7 @@
     edges = doc.edges;
     title = doc.title;
     mode = doc.mode;
+    repositoryId = doc.repositoryId || "";
     viewport = doc.viewport || { x: 0, y: 0, zoom: 1 };
     selectedId = "";
     draftSource = "";
@@ -122,6 +132,9 @@
         "No se pudo abrir el guardado local. Puedes importar una copia JSON.";
     }
     ready = true;
+    const publishedId = new URLSearchParams(location.search).get("diagram");
+    if (publishedId && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(publishedId))
+      void openPublished(publishedId);
     return () => clearTimeout(timer);
   });
   $effect(() => {
@@ -184,7 +197,10 @@
     if (kind !== "note") void arrange();
   }
   function updateNode(data) {
-    if(ordering){layoutRevision++;ordering=false;}
+    if (ordering) {
+      layoutRevision++;
+      ordering = false;
+    }
     record();
     nodes = nodes.map((n) =>
       n.id === selectedId ? { ...n, data: { ...n.data, ...data } } : n,
@@ -192,7 +208,10 @@
     if (data.columns) void arrange();
   }
   function updateEdge(data) {
-    if(ordering){layoutRevision++;ordering=false;}
+    if (ordering) {
+      layoutRevision++;
+      ordering = false;
+    }
     record();
     edges = edges.map((e) => (e.id === selectedId ? { ...e, ...data } : e));
     if (data.label !== undefined) void arrange();
@@ -290,12 +309,12 @@
     record();
     try {
       const result = await arrangeDiagram(mode, nodes, edges);
-      if (
-        attempt !== layoutRevision ||
-        mode !== beforeMode
-      )
-        return;
+      if (attempt !== layoutRevision || mode !== beforeMode) return;
       nodes = result.nodes;
+      await tick();
+      updateInternals(result.nodes.map((n) => n.id));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      if (attempt !== layoutRevision) return;
       edges = result.edges;
       await tick();
       await flow.fitView({ padding: 0.12, duration: 200 });
@@ -327,6 +346,45 @@
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  async function openPublished(id) {
+    try {
+      const response = await fetch(
+        `${import.meta.env.BASE_URL}diagrams/${id}.json`,
+      );
+      if (!response.ok) throw new Error("El diagrama no existe.");
+      const raw = await response.json();
+      load({ ...validateDiagram(raw), repositoryId: id });
+    } catch (e) {
+      error = `No se pudo abrir el enlace: ${e.message}`;
+    }
+  }
+  async function saveRepository() {
+    savingRepository = true;
+    error = "";
+    try {
+      const response = await fetch(
+        `${import.meta.env.BASE_URL}__diagrams/save`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: repositoryId || undefined,
+            diagram: documentValue(),
+          }),
+        },
+      );
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No se pudo guardar.");
+      repositoryId = result.id;
+      repositoryRevision++;
+      repositoryNotice = `Guardado en public/diagrams/${result.file}. Incluye estos archivos en tu próximo commit para publicarlos.`;
+      persist();
+    } catch (e) {
+      error = `No se pudo guardar en el repositorio: ${e.message}`;
+    } finally {
+      savingRepository = false;
+    }
+  }
   async function importJSON(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -347,7 +405,10 @@
   }
   async function loadSQL() {
     try {
-      const response = await fetch("/schema/erd.json", { cache: "no-store" });
+      const response = await fetch(
+        `${import.meta.env.BASE_URL}schema/erd.json`,
+        { cache: "no-store" },
+      );
       if (!response.ok)
         throw new Error("No se encontró public/schema/erd.json.");
       const doc = validateDiagram(await response.json());
@@ -436,6 +497,14 @@
     >
     <div class="top-actions">
       <button
+        class="repository-toggle"
+        aria-expanded={showRepository}
+        onclick={() => {
+          showRepository = !showRepository;
+          showConnect = false;
+        }}>Diagramas</button
+      >
+      <button
         aria-label="Deshacer"
         title="Deshacer (Ctrl+Z)"
         disabled={!(revision && history.canUndo) || ordering}
@@ -473,6 +542,12 @@
     />
   </header>
   <div class="actionbar">
+    {#if import.meta.env.DEV}<button
+        class="save-repository"
+        disabled={savingRepository || ordering}
+        onclick={saveRepository}
+        >{savingRepository ? "Guardando…" : "Guardar en repositorio"}</button
+      >{/if}
     <div class="add-actions">
       {#each palette[mode] as [kind, label]}<button
           disabled={ordering}
@@ -507,7 +582,21 @@
         >×</button
       >
     </div>{/if}
+  {#if repositoryNotice}<div class="repository-notice" role="status">
+      {repositoryNotice}<button
+        aria-label="Cerrar confirmación"
+        onclick={() => (repositoryNotice = "")}>×</button
+      >
+    </div>{/if}
   <main class="canvas" aria-label="Lienzo de diagramación">
+    {#if showRepository}<RepositoryPanel
+        revision={repositoryRevision}
+        open={(doc) => {
+          persist();
+          load(doc);
+        }}
+        dismiss={() => (showRepository = false)}
+      />{/if}
     {#if ready}<SvelteFlow
         bind:nodes
         bind:edges
@@ -562,7 +651,9 @@
           if (mode === "sequence") void arrange();
         }}
         onflowerror={(code, message) =>
-          (error = "Error al dibujar (" + code + "): " + message)}
+          queueMicrotask(() => {
+            error = "Error al dibujar (" + code + "): " + message;
+          })}
       >
         <Controls />{#if showMiniMap}<MiniMap
             pannable
