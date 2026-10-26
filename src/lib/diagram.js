@@ -90,6 +90,7 @@ export function template(mode) {
       type: "straight",
       label: `${i + 1}. ${label}`,
       markerEnd: arrow,
+      returnMessage: i > 1,
       style: i > 1 ? "stroke-dasharray: 6 4;" : "",
     }));
   }
@@ -185,6 +186,7 @@ export function validateDiagram(value) {
   });
   const edgeIds = new Set();
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const priorMessages = mode === "sequence" ? new Map() : null;
   const edges = value.edges.map((e) => {
     if (
       !e ||
@@ -197,6 +199,29 @@ export function validateDiagram(value) {
     edgeIds.add(e.id);
     if (e.label != null && typeof e.label !== "string")
       fail("Etiqueta de conexión inválida.");
+    if (e.returnMessage != null && typeof e.returnMessage !== "boolean")
+      fail("Tipo de mensaje inválido.");
+    const legacyReturnMessage =
+      mode === "sequence" &&
+      e.returnMessage == null &&
+      typeof e.style === "string" &&
+      e.style.includes("stroke-dasharray");
+    const isReturnMessage =
+      mode === "sequence" &&
+      (e.returnMessage ?? legacyReturnMessage);
+    const pairKey =
+      mode === "sequence"
+        ? JSON.stringify([e.source, e.target].sort())
+        : null;
+    const previousMessage = pairKey ? priorMessages.get(pairKey) : null;
+    // Keep an already-opposite reply; reverse legacy returns that still match a call.
+    const reverseLegacyReturn =
+      legacyReturnMessage &&
+      (!previousMessage ||
+        (previousMessage.source === e.source &&
+          previousMessage.target === e.target));
+    if (mode === "sequence" && !isReturnMessage)
+      priorMessages.set(pairKey, { source: e.source, target: e.target });
     for (const k of ["sourceHandle", "targetHandle"])
       if (e[k] != null && typeof e[k] !== "string")
         fail("Puerto de conexión inválido.");
@@ -242,8 +267,8 @@ export function validateDiagram(value) {
       fail("Etiqueta de ruta inválida.");
     return {
       id: e.id,
-      source: e.source,
-      target: e.target,
+      source: reverseLegacyReturn ? e.target : e.source,
+      target: reverseLegacyReturn ? e.source : e.target,
       sourceHandle: e.sourceHandle,
       targetHandle: e.targetHandle,
       label: e.label ?? "",
@@ -254,10 +279,15 @@ export function validateDiagram(value) {
         : "smoothstep",
       markerEnd: arrow,
       data: route ? { route, routeLabel } : undefined,
+      returnMessage: mode === "sequence" ? isReturnMessage : undefined,
       style:
-        typeof e.style === "string" && e.style.includes("stroke-dasharray")
-          ? "stroke-dasharray: 6 4;"
-          : "",
+        mode === "sequence"
+          ? isReturnMessage
+            ? "stroke-dasharray: 6 4;"
+            : ""
+          : typeof e.style === "string" && e.style.includes("stroke-dasharray")
+            ? "stroke-dasharray: 6 4;"
+            : "",
       animated: !!e.animated,
     };
   });

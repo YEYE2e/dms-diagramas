@@ -14,7 +14,7 @@ Usa la dirección local que imprime Vite (`localhost` o `127.0.0.1`). `npm.cmd` 
 - Añade entidades, participantes o notas desde la barra. Selecciona elementos para editar sus propiedades.
 - Arrastra entre puertos o pulsa **Conectar** para crear relaciones y mensajes.
 - **Ordenar diagrama** alinea participantes y asigna una fila a cada mensaje. En ER utiliza ELK en un Web Worker para distribuir las tablas y calcular rutas ortogonales con puertos separados. Reduce cruces y evita atravesar entidades; un grafo arbitrario puede necesitar cruces.
-- Las nuevas conexiones y los cambios estructurales se ordenan automáticamente. En secuencia, las propiedades permiten subir o bajar mensajes y marcar retornos. Hasta 200 mensajes.
+- Las nuevas conexiones y los cambios estructurales se ordenan automáticamente. En secuencia, las propiedades permiten subir o bajar mensajes y marcar retornos, que invierten la dirección de la flecha. Hasta 200 mensajes.
 - En ER puedes editar atributos, tipos, claves PK/FK/PK-FK y nulabilidad. Las cardinalidades se muestran como texto.
 - Ctrl/⌘+Z deshace; Ctrl/⌘+Shift+Z rehace; Ctrl/⌘+D duplica; Supr elimina; Shift permite selección múltiple. Rueda para zoom y fondo para desplazar.
 - Cada tipo conserva un borrador en el navegador. Importar/exportar JSON permite llevar copias. Límite de importación: 5 MB, 1500 nodos y 5000 conexiones.

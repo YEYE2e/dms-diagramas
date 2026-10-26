@@ -213,7 +213,21 @@
       ordering = false;
     }
     record();
-    edges = edges.map((e) => (e.id === selectedId ? { ...e, ...data } : e));
+    edges = edges.map((e) => {
+      if (e.id !== selectedId) return e;
+      const updated = { ...e, ...data };
+      if (mode === "sequence" && typeof data.returnMessage === "boolean") {
+        const wasReturn =
+          e.returnMessage ?? !!e.style?.includes("stroke-dasharray");
+        if (wasReturn !== data.returnMessage) {
+          updated.source = e.target;
+          updated.target = e.source;
+        }
+        updated.returnMessage = data.returnMessage;
+        updated.style = data.returnMessage ? "stroke-dasharray: 6 4;" : "";
+      }
+      return updated;
+    });
     if (data.label !== undefined) void arrange();
   }
   function remove() {
@@ -296,6 +310,7 @@
               ? `${c.sourceHandle.slice(1)}. Mensaje`
               : ""),
         markerEnd: { type: "arrowclosed", color: "#64748b" },
+        returnMessage: mode === "sequence" ? false : undefined,
       },
     ];
     draftLabel = "";

@@ -1,4 +1,4 @@
-﻿import { test, expect } from "@playwright/test";
+﻿﻿import { test, expect } from "@playwright/test";
 async function settled(page) {
   await expect(
     page.getByRole("button", { name: "Ordenar diagrama", exact: true }),
@@ -109,6 +109,9 @@ test("sequence uses unique message rows and ER work survives type changes", asyn
   await settled(page);
   await page.getByLabel("Nombre del atributo 3").fill("email");
   await page.getByLabel("Nombre del atributo 3").press("Tab");
+  await expect(
+    page.locator(".svelte-flow__node").filter({ hasText: "email" }),
+  ).toHaveCount(1);
   await page.getByLabel("Tipo de diagrama").selectOption("sequence");
   await settled(page);
   await expect(page.locator(".svelte-flow__node-participant")).toHaveCount(3);
@@ -118,7 +121,27 @@ test("sequence uses unique message rows and ER work survives type changes", asyn
     .getByRole("button", { name: "Cerrar conexiones", exact: true })
     .click();
   await selectEdge(page, 4);
+  const messageEdge = page.locator(".svelte-flow__edge").nth(4);
+  const readEndpoints = () =>
+    messageEdge.locator(".svelte-flow__edge-path").evaluate((path) => {
+      const coordinates = path
+        .getAttribute("d")
+        .match(/-?\d+(?:\.\d+)?/g)
+        .map(Number);
+      return [coordinates[0], coordinates[2]];
+    });
+  const [startBefore, endBefore] = await readEndpoints();
+  expect(startBefore).toBeLessThan(endBefore);
   await page.getByLabel("Mensaje de retorno").check();
+  const pointsLeft = async () => {
+    const [sourceX, targetX] = await readEndpoints();
+    return sourceX > targetX;
+  };
+  await expect.poll(pointsLeft).toBe(true);
+  await page.getByLabel("Mensaje de retorno").uncheck();
+  await expect.poll(pointsLeft).toBe(false);
+  await page.getByLabel("Mensaje de retorno").check();
+  await expect.poll(pointsLeft).toBe(true);
   await page
     .getByRole("button", { name: "↑ Subir mensaje", exact: true })
     .click();

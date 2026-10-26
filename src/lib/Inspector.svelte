@@ -136,11 +136,11 @@
       <label class="check"
         ><input
           type="checkbox"
-          checked={!!edge.style?.includes("stroke-dasharray")}
+          checked={
+            edge.returnMessage ?? !!edge.style?.includes("stroke-dasharray")
+          }
           onchange={(e) =>
-            updateEdge({
-              style: e.target.checked ? "stroke-dasharray: 6 4;" : "",
-            })}
+            updateEdge({ returnMessage: e.target.checked })}
         /> Mensaje de retorno</label
       >
     {:else}<label
