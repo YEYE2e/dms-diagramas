@@ -26,4 +26,5 @@ dist-ssr
 public/schema/erd.json
 .tmp/
 test-results/
+.playwright-cli/
 playwright-report/
